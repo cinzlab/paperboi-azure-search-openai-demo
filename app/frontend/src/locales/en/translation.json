@@ -42,16 +42,16 @@
         "3": "What can you tell me about nanostructures?",
         "placeholder": "Type a new question (e.g. ask about a subject you're interested in)"
     },
-    "askTitle": "Ask your data",
+    "askTitle": "Ask About Scientific Papers",
     "gpt4vExamples": {
-        "1": "Compare the impact of interest rates and GDP in financial markets.",
-        "2": "What is the expected trend for the S&P 500 index over the next five years? Compare it to the past S&P 500 performance",
-        "3": "Can you identify any correlation between oil prices and stock market trends?",
-        "placeholder": "Example: Does my plan cover annual eye exams?"
+        "1": "What can you tell me about MSL's mains-frequency power standard?",
+        "2": "What can you tell me about the practical issues of feedback interferometry?",
+        "3": "What can you tell me about nanostructures?",
+        "placeholder": "Example: What papers do you hold which were authored by Robert Holt?"
     },
-    "generatingAnswer": "Generating answer",
-    "citationWithColon": "Citation:",
-    "followupQuestions": "Follow-up questions:",
+    "generatingAnswer": "Researching",
+    "citationWithColon": "References:",
+    "followupQuestions": "Suggested follow-up questions:",
 
     "tooltips": {
         "submitQuestion": "Submit question",
