@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# cd into the parent directory of the script, 
-# so that the script generates virtual environments always in the same path.
-cd "${0%/*}" || exit 1
-
 cd ../
 echo 'Creating python virtual environment ".venv"'
 python3 -m venv .venv
@@ -13,10 +9,9 @@ echo "Restoring backend python packages"
 echo ""
 
 ./.venv/bin/python -m pip install -r app/backend/requirements.txt
-out=$?
-if [ $out -ne 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Failed to restore backend python packages"
-    exit $out
+    exit $?
 fi
 
 echo ""
@@ -25,10 +20,9 @@ echo ""
 
 cd app/frontend
 npm install
-out=$?
-if [ $out -ne 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Failed to restore frontend npm packages"
-    exit $out
+    exit $?
 fi
 
 echo ""
@@ -36,10 +30,9 @@ echo "Building frontend"
 echo ""
 
 npm run build
-out=$?
-if [ $out -ne 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Failed to build frontend"
-    exit $out
+    exit $?
 fi
 
 echo ""
@@ -51,8 +44,7 @@ cd ../backend
 port=50505
 host=localhost
 ../../.venv/bin/python -m quart --app main:app run --port "$port" --host "$host" --reload
-out=$?
-if [ $out -ne 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Failed to start backend"
-    exit $out
+    exit $?
 fi
