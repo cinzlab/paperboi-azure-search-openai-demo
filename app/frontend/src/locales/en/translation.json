@@ -1,6 +1,6 @@
 {
-    "pageTitle": "Paperboi: AI Scientific Paper Search Demo",
-    "headerTitle": "Paperboi: AI Scientific Paper Search Demo",
+    "pageTitle": "SoilInsights: AI Soil Data Search Demo",
+    "headerTitle": "SoilInsights: AI Soil Data Search Demo",
     "chat": "Chat",
     "qa": "Ask a question",
     "login": "Login",
@@ -34,20 +34,20 @@
     },
     "developerSettings": "Developer settings",
 
-    "chatEmptyStateTitle": "Chat With Scientific Papers",
+    "chatEmptyStateTitle": "SoilInsights: Chat With Soil Data",
     "chatEmptyStateSubtitle": "Ask anything or try an example",
     "defaultExamples": {
-        "1": "What can you tell me about MSL's mains-frequency power standard?",
-        "2": "What can you tell me about the practical issues of feedback interferometry?",
-        "3": "What can you tell me about nanostructures?",
-        "placeholder": "Type a new question (e.g. ask about a subject you're interested in)"
+        "1": "What can you tell me about Soil?",
+        "2": "What's another soil related question?",
+        "3": "We need one more example for here?",
+        "placeholder": "Type a new question (e.g. ask about some soil you're interested in)"
     },
-    "askTitle": "Ask About Scientific Papers",
+    "askTitle": "SoilInsights: Ask About Soil Data",
     "gpt4vExamples": {
-        "1": "What can you tell me about MSL's mains-frequency power standard?",
-        "2": "What can you tell me about the practical issues of feedback interferometry?",
-        "3": "What can you tell me about nanostructures?",
-        "placeholder": "Example: What papers do you hold which were authored by Robert Holt?"
+        "1": "What can you tell me about Soil?",
+        "2": "What's another soil related question?",
+        "3": "We need one more example for here?",
+        "placeholder": "Type a new question (e.g. ask about some soil you're interested in)"
     },
     "generatingAnswer": "Researching",
     "citationWithColon": "References:",
