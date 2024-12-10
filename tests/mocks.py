@@ -151,10 +151,12 @@ class MockAsyncSearchResultsIterator:
 
 
 class MockResponse:
-    def __init__(self, status, text=None, headers=None):
-        self._text = text or ""
+    def __init__(self, text, status):
+        self.text = text
         self.status = status
-        self.headers = headers or {}
+
+    async def text(self):
+        return self._text
 
     async def __aexit__(self, exc_type, exc, tb):
         pass
@@ -162,15 +164,8 @@ class MockResponse:
     async def __aenter__(self):
         return self
 
-    async def text(self):
-        return self._text
-
     async def json(self):
-        return json.loads(self._text)
-
-    def raise_for_status(self):
-        if self.status != 200:
-            raise Exception(f"HTTP status {self.status}")
+        return json.loads(self.text)
 
 
 class MockEmbeddingsClient:

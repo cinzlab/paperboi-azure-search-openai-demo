@@ -1,6 +1,3 @@
-# set the parent of the script as the current location.
-Set-Location $PSScriptRoot
-
 Write-Host ""
 Write-Host "Loading azd .env file from current environment"
 Write-Host ""

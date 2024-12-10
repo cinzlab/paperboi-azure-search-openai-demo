@@ -65,7 +65,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
     };
 
     const disableRequiredAccessControl = requireLogin && !loggedIn;
-    const sendQuestionDisabled = disabled || !question.trim() || disableRequiredAccessControl;
+    const sendQuestionDisabled = disabled || !question.trim() || requireLogin;
 
     if (disableRequiredAccessControl) {
         placeholder = "Please login to continue...";
