@@ -31,7 +31,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         openai_client: AsyncOpenAI,
         chatgpt_model: str,
         chatgpt_deployment: Optional[str],  # Not needed for non-Azure OpenAI
-        embedding_deployment: Optional[str],  # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        embedding_deployment: Optional[str],
         embedding_model: str,
         embedding_dimensions: int,
         sourcepage_field: str,
@@ -51,13 +52,14 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         self.content_field = content_field
         self.query_language = query_language
         self.query_speller = query_speller
-        self.chatgpt_token_limit = get_token_limit(chatgpt_model, default_to_minimum=self.ALLOW_NON_GPT_MODELS)
+        self.chatgpt_token_limit = get_token_limit(
+            chatgpt_model, default_to_minimum=self.ALLOW_NON_GPT_MODELS)
 
     @property
     def system_message_chat_conversation(self):
-        return """Assistant helps the company employees with their healthcare plan questions, and questions about the employee handbook. Be brief in your answers.
-        Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
-        If the question is not in English, answer in the language used in the question.
+        return """You are a scientific research paper summary assistant which helps scientists find answers to their questions about existing research papers. You have access to a large database of research papers. You need to provide the user with a summary of the research papers that answer their questions. Be as detailed as possible.
+        Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, politely let the user know you don't have information about that topic, and suggest the user consults other sources. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+        If the question is not in English, translate the question into English before generating an answer, then translate the answer back to the language used in the question. If answering in English, only ever answer in New Zealand English.
         Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brackets to reference the source, for example [info1.txt]. Don't combine sources, list each source separately, for example [info1.txt][info2.pdf].
         {follow_up_questions_prompt}
         {injected_prompt}
@@ -89,10 +91,14 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         should_stream: bool = False,
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]]]:
         seed = overrides.get("seed", None)
-        use_text_search = overrides.get("retrieval_mode") in ["text", "hybrid", None]
-        use_vector_search = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
-        use_semantic_ranker = True if overrides.get("semantic_ranker") else False
-        use_semantic_captions = True if overrides.get("semantic_captions") else False
+        use_text_search = overrides.get("retrieval_mode") in [
+            "text", "hybrid", None]
+        use_vector_search = overrides.get("retrieval_mode") in [
+            "vectors", "hybrid", None]
+        use_semantic_ranker = True if overrides.get(
+            "semantic_ranker") else False
+        use_semantic_captions = True if overrides.get(
+            "semantic_captions") else False
         top = overrides.get("top", 3)
         minimum_search_score = overrides.get("minimum_search_score", 0.0)
         minimum_reranker_score = overrides.get("minimum_reranker_score", 0.0)
@@ -100,7 +106,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
 
         original_user_query = messages[-1]["content"]
         if not isinstance(original_user_query, str):
-            raise ValueError("The most recent message content must be a string.")
+            raise ValueError(
+                "The most recent message content must be a string.")
         user_query_request = "Generate search query for: " + original_user_query
 
         tools: List[ChatCompletionToolParam] = [
@@ -124,7 +131,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         ]
 
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
-        query_response_token_limit = 100
+        query_response_token_limit = 200
         query_messages = build_messages(
             model=self.chatgpt_model,
             system_prompt=self.query_prompt_template,
@@ -141,13 +148,15 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             # Azure OpenAI takes the deployment name as the model name
             model=self.chatgpt_deployment if self.chatgpt_deployment else self.chatgpt_model,
             temperature=0.0,  # Minimize creativity for search query generation
-            max_tokens=query_response_token_limit,  # Setting too low risks malformed JSON, setting too high may affect performance
+            # Setting too low risks malformed JSON, setting too high may affect performance
+            max_tokens=query_response_token_limit,
             n=1,
             tools=tools,
             seed=seed,
         )
 
-        query_text = self.get_search_query(chat_completion, original_user_query)
+        query_text = self.get_search_query(
+            chat_completion, original_user_query)
 
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
@@ -169,7 +178,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             minimum_reranker_score,
         )
 
-        sources_content = self.get_sources_content(results, use_semantic_captions, use_image_citation=False)
+        sources_content = self.get_sources_content(
+            results, use_semantic_captions, use_image_citation=False)
         content = "\n".join(sources_content)
 
         # STEP 3: Generate a contextual and content specific answer using the search results and chat history
@@ -177,10 +187,11 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         # Allow client to replace the entire prompt, or to inject into the exiting prompt using >>>
         system_message = self.get_system_prompt(
             overrides.get("prompt_template"),
-            self.follow_up_questions_prompt_content if overrides.get("suggest_followup_questions") else "",
+            self.follow_up_questions_prompt_content if overrides.get(
+                "suggest_followup_questions") else "",
         )
 
-        response_token_limit = 1024
+        response_token_limit = 4096
         messages = build_messages(
             model=self.chatgpt_model,
             system_prompt=system_message,
@@ -200,7 +211,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                     "Prompt to generate search query",
                     query_messages,
                     (
-                        {"model": self.chatgpt_model, "deployment": self.chatgpt_deployment}
+                        {"model": self.chatgpt_model,
+                            "deployment": self.chatgpt_deployment}
                         if self.chatgpt_deployment
                         else {"model": self.chatgpt_model}
                     ),
@@ -225,7 +237,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                     "Prompt to generate answer",
                     messages,
                     (
-                        {"model": self.chatgpt_model, "deployment": self.chatgpt_deployment}
+                        {"model": self.chatgpt_model,
+                            "deployment": self.chatgpt_deployment}
                         if self.chatgpt_deployment
                         else {"model": self.chatgpt_model}
                     ),

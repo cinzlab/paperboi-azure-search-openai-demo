@@ -18,24 +18,25 @@ class RetrieveThenReadApproach(Approach):
     """
 
     system_chat_template = (
-        "You are an intelligent assistant helping Contoso Inc employees with their healthcare plan questions and employee handbook questions. "
+        "You are an intelligent assistant helping scientists find information about existing scientific papers. "
         + "Use 'you' to refer to the individual asking the questions even if they ask with 'I'. "
         + "Answer the following question using only the data provided in the sources below. "
-        + "Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. "
-        + "If you cannot answer using the sources below, say you don't know. Use below example to answer"
+        + "Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response."
+        + "Use square brackets to reference the source, for example [info1.txt]. Don't combine sources, list each source separately, for example [info1.txt][info2.pdf]."
+        + "If you cannot answer using the sources below, say you don't have information about that topic, and suggest the user refer to other sources. Use below example to answer"
     )
 
     # shots/sample conversation
     question = """
-'What is the deductible for the employee plan for a visit to Overlake in Bellevue?'
+'What are the orginisations you have scientific papers from?'
 
 Sources:
-info1.txt: deductibles depend on whether you are in-network or out-of-network. In-network deductibles are $500 for employee and $1000 for family. Out-of-network deductibles are $1000 for employee and $2000 for family.
-info2.pdf: Overlake is in-network for the employee plan.
-info3.pdf: Overlake is the name of the area that includes a park and ride near Bellevue.
-info4.pdf: In-network institutions include Overlake, Swedish and others in the region
+info1.txt: Measurement Standards Laboratory publish papers about metrology.
+info2.pdf: Auckland University publish papers across a wide range of scientific topics.
+info3.pdf: Industrial Research Limited and Callaghan Innovation publish papers about physics, biotechnology, and materials science.
+info4.pdf: Other orginisations who publish papers are Victoria University of Wellington and Massey University. 
 """
-    answer = "In-network deductibles are $500 for employee and $1000 for family [info1.txt] and Overlake is in-network for the employee plan [info2.pdf][info4.pdf]."
+    answer = "Papers about metrology are published by Measurement Standards Laboratory [info1.txt] and Auckland University, Industrial Research Limited and Callaghan Innovation publish general research [info2.pdf][info4.pdf]."
 
     def __init__(
         self,
@@ -46,7 +47,8 @@ info4.pdf: In-network institutions include Overlake, Swedish and others in the r
         chatgpt_model: str,
         chatgpt_deployment: Optional[str],  # Not needed for non-Azure OpenAI
         embedding_model: str,
-        embedding_deployment: Optional[str],  # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        embedding_deployment: Optional[str],
         embedding_dimensions: int,
         sourcepage_field: str,
         content_field: str,
@@ -66,7 +68,8 @@ info4.pdf: In-network institutions include Overlake, Swedish and others in the r
         self.content_field = content_field
         self.query_language = query_language
         self.query_speller = query_speller
-        self.chatgpt_token_limit = get_token_limit(chatgpt_model, self.ALLOW_NON_GPT_MODELS)
+        self.chatgpt_token_limit = get_token_limit(
+            chatgpt_model, self.ALLOW_NON_GPT_MODELS)
 
     async def run(
         self,
@@ -76,14 +79,19 @@ info4.pdf: In-network institutions include Overlake, Swedish and others in the r
     ) -> dict[str, Any]:
         q = messages[-1]["content"]
         if not isinstance(q, str):
-            raise ValueError("The most recent message content must be a string.")
+            raise ValueError(
+                "The most recent message content must be a string.")
         overrides = context.get("overrides", {})
         seed = overrides.get("seed", None)
         auth_claims = context.get("auth_claims", {})
-        use_text_search = overrides.get("retrieval_mode") in ["text", "hybrid", None]
-        use_vector_search = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
-        use_semantic_ranker = True if overrides.get("semantic_ranker") else False
-        use_semantic_captions = True if overrides.get("semantic_captions") else False
+        use_text_search = overrides.get("retrieval_mode") in [
+            "text", "hybrid", None]
+        use_vector_search = overrides.get("retrieval_mode") in [
+            "vectors", "hybrid", None]
+        use_semantic_ranker = True if overrides.get(
+            "semantic_ranker") else False
+        use_semantic_captions = True if overrides.get(
+            "semantic_captions") else False
         top = overrides.get("top", 3)
         minimum_search_score = overrides.get("minimum_search_score", 0.0)
         minimum_reranker_score = overrides.get("minimum_reranker_score", 0.0)
@@ -108,17 +116,20 @@ info4.pdf: In-network institutions include Overlake, Swedish and others in the r
         )
 
         # Process results
-        sources_content = self.get_sources_content(results, use_semantic_captions, use_image_citation=False)
+        sources_content = self.get_sources_content(
+            results, use_semantic_captions, use_image_citation=False)
 
         # Append user message
         content = "\n".join(sources_content)
         user_content = q + "\n" + f"Sources:\n {content}"
 
-        response_token_limit = 1024
+        response_token_limit = 4096
         updated_messages = build_messages(
             model=self.chatgpt_model,
-            system_prompt=overrides.get("prompt_template", self.system_chat_template),
-            few_shots=[{"role": "user", "content": self.question}, {"role": "assistant", "content": self.answer}],
+            system_prompt=overrides.get(
+                "prompt_template", self.system_chat_template),
+            few_shots=[{"role": "user", "content": self.question},
+                       {"role": "assistant", "content": self.answer}],
             new_user_content=user_content,
             max_tokens=self.chatgpt_token_limit - response_token_limit,
             fallback_to_default=self.ALLOW_NON_GPT_MODELS,
@@ -158,7 +169,8 @@ info4.pdf: In-network institutions include Overlake, Swedish and others in the r
                     "Prompt to generate answer",
                     updated_messages,
                     (
-                        {"model": self.chatgpt_model, "deployment": self.chatgpt_deployment}
+                        {"model": self.chatgpt_model,
+                            "deployment": self.chatgpt_deployment}
                         if self.chatgpt_deployment
                         else {"model": self.chatgpt_model}
                     ),

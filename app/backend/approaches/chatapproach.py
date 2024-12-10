@@ -10,10 +10,10 @@ from approaches.approach import Approach
 
 class ChatApproach(Approach, ABC):
     query_prompt_few_shots: list[ChatCompletionMessageParam] = [
-        {"role": "user", "content": "How did crypto do last year?"},
-        {"role": "assistant", "content": "Summarize Cryptocurrency Market Dynamics from last year"},
-        {"role": "user", "content": "What are my health plans?"},
-        {"role": "assistant", "content": "Show available health plans"},
+        {"role": "user", "content": "How many papers related to metrology are you aware of?"},
+        {"role": "assistant", "content": "Count of papers related to metrology"},
+        {"role": "user", "content": "What topics are you aware of?"},
+        {"role": "assistant", "content": "Show summary of topics of available papers"},
     ]
     NO_RESPONSE = "0"
 
@@ -94,7 +94,8 @@ class ChatApproach(Approach, ABC):
         content = chat_completion_response.choices[0].message.content
         role = chat_completion_response.choices[0].message.role
         if overrides.get("suggest_followup_questions"):
-            content, followup_questions = self.extract_followup_questions(content)
+            content, followup_questions = self.extract_followup_questions(
+                content)
             extra_info["followup_questions"] = followup_questions
         chat_app_response = {
             "message": {"content": content, "role": role},
@@ -136,13 +137,14 @@ class ChatApproach(Approach, ABC):
                     if earlier_content:
                         completion["delta"]["content"] = earlier_content
                         yield completion
-                    followup_content += content[content.index("<<") :]
+                    followup_content += content[content.index("<<"):]
                 elif followup_questions_started:
                     followup_content += content
                 else:
                     yield completion
         if followup_content:
-            _, followup_questions = self.extract_followup_questions(followup_content)
+            _, followup_questions = self.extract_followup_questions(
+                followup_content)
             yield {"delta": {"role": "assistant"}, "context": {"followup_questions": followup_questions}}
 
     async def run(
